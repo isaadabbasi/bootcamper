@@ -23,7 +23,7 @@ contract Bootcamper is ERC721 {
   }
 
   // --- Constants and Immutables --- //
-  address immutable private i_owner;
+  address payable immutable private i_owner;
   uint constant private RECORDS_PER_PAGE = 10;
 
   // --- State Variables --- //
@@ -57,7 +57,7 @@ contract Bootcamper is ERC721 {
     _name,
     _symbol
   ) {
-    i_owner = msg.sender;
+    i_owner = payable(msg.sender);
   }
 
   // fallback() external {
@@ -105,7 +105,7 @@ contract Bootcamper is ERC721 {
   }
 
   function collectFees() external onlyOwner {
-    (bool success, ) = i_owner.call{value: s_feeCollected}("");
+    bool success = i_owner.send(s_feeCollected);
     if (!success) {
       revert TransferFailed(address(this), i_owner, s_feeCollected);
     }
@@ -154,6 +154,7 @@ contract Bootcamper is ERC721 {
   function withdraw(uint128 _id) external {
     // checks if the user is enrolled in the course
     uint enrolledInIndex = _enrolledInIndex(msg.sender, _id);
+
     if (enrolledInIndex == type(uint).max) {
       revert BootcamperNotEnrolled(msg.sender);
     }
@@ -199,7 +200,7 @@ contract Bootcamper is ERC721 {
   function isEnrolled(address _user, uint128 _id) public view returns (bool) {
     // bad: but we know a user will only be enrolled in few courses
     uint idx = _enrolledInIndex(_user, _id);
-    return idx == type(uint).max;
+    return idx != type(uint).max;
   }
 
   function myCourses() public view returns (Bootcamp[] memory) {
@@ -242,6 +243,14 @@ contract Bootcamper is ERC721 {
     }
 
     return courses;
+  }
+
+  function getOwner() public view returns (address) {
+    return i_owner;
+  }
+
+  function getTotalCourses() public view returns (uint) {
+    return EnumerableSet.length(s_bootcampIds);
   }
 
 }
