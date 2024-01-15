@@ -5,6 +5,11 @@ import "@openzeppelin-contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin-contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 
+/**
+ * @title Bootcamper
+ * @author isaadabbasi
+ * @notice  Bootcamper is an ERC721 contract enables an institution to token-gate its content behind a deposit wall. Deposit is refundable only upon completion of course. Completion of course is determined by having all the completion certificates (NFTs) of each chapter, exercise and homework.
+ */
 contract Bootcamper is ERC721 {
   // --- Structs and Enum --- //
   struct Bootcamp {
@@ -12,7 +17,7 @@ contract Bootcamper is ERC721 {
     uint128 deposit;
     uint128 deadline;
     uint128 timeToComplete;
-    string title; // Important?
+    string title;
     address[] tasks;
     uint8 feePercentage;
   }
@@ -70,6 +75,15 @@ contract Bootcamper is ERC721 {
     _;
   }
 
+  /**
+   * 
+   * @param _deposit Amount of ether to be deposited
+   * @param _deadline Deadline for project completion
+   * @param _timeToComplete Time to complete project
+   * @param _feePercentage Fee percentage that will be deducted from deposit upon completion
+   * @param _title title of the course (for example "Solidity 101")
+   * @param _tasks list of addresses (nfts) that a user must have before it withdrawing the funds once deposited
+   */
   function addCourse(
     uint128 _deposit,
     uint128 _deadline,
@@ -95,6 +109,10 @@ contract Bootcamper is ERC721 {
     s_courseId = s_courseId + 1;
   }
 
+  /**
+   * 
+   * @param _id course id that needs to be removed
+   */
   function removeCourse(uint128 _id) external onlyOwner {
     // Can we remove an ongoing course? uint128 studentsEnrolled?
 
@@ -103,6 +121,9 @@ contract Bootcamper is ERC721 {
     emit CourseRemoved(_id);
   }
 
+  /**
+   * @notice Collects all the fees and sends to the owner address
+   */
   function collectFees() external onlyOwner {
     bool success = i_owner.send(s_feeCollected);
     if (!success) {
@@ -110,6 +131,10 @@ contract Bootcamper is ERC721 {
     }
   }
 
+  /**
+   * 
+   * @param _id course id of course that sender wants to be enrolled in
+   */
   function enroll(uint128 _id) external payable {    
     // check if user isn't already enrolled
     if (isEnrolled(msg.sender, _id)) {
@@ -133,7 +158,11 @@ contract Bootcamper is ERC721 {
     _mint(msg.sender, s_accessNftId);
     s_accessNftId = s_accessNftId + 1;
   }
-
+  /**
+   * 
+   * @param _tasks list of addresses (nfts) that a user must have before it withdrawing the funds once deposited
+   * @notice Checks if all tasks are completed by the user. if not it reverts with TaskNotCompleted
+   */
   function _revertIfTasksNotCompleted(address[] memory _tasks) private view {
     uint totalTasks = _tasks.length;
     for (uint i = 0; i < totalTasks; ++i) {
@@ -143,13 +172,18 @@ contract Bootcamper is ERC721 {
       }
     }
   }
-
+  /**
+   * @notice Removes an entry from the array  
+   */
   function _safeRemoveEntry(uint _idx) private {
     uint lastIndexOfEnrollment = s_enrolled[msg.sender].length - 1;
     s_enrolled[msg.sender][_idx] = s_enrolled[msg.sender][lastIndexOfEnrollment];
     s_enrolled[msg.sender].pop();
   }
-
+  
+  /**
+   * @param _id course id of course you have completed and wants to withdraw the funds of
+   */
   function withdraw(uint128 _id) external {
     // checks if the user is enrolled in the course
     uint enrolledInIndex = _enrolledInIndex(msg.sender, _id);
