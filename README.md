@@ -1,5 +1,3 @@
-DEADLINE: Jan 16!
---- Today, 10th Jan Wednesday
 Title: Bootcamper
 
 Summary: Token gated course curriculum and content
