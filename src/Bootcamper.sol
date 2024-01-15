@@ -24,7 +24,6 @@ contract Bootcamper is ERC721 {
 
   // --- Constants and Immutables --- //
   address payable immutable private i_owner;
-  uint constant private RECORDS_PER_PAGE = 10;
 
   // --- State Variables --- //
   uint128 private s_feeCollected = 0;
@@ -224,22 +223,28 @@ contract Bootcamper is ERC721 {
     return courses;
   }
 
-  function getAllCourses(uint pageCount) public view returns (Bootcamp[] memory) {
-    uint offset = (pageCount - 1) * RECORDS_PER_PAGE;
+  function getAllCourses(uint pageCount, uint recordsPerPage) public view returns (Bootcamp[] memory) {
+    uint offset = (pageCount - 1) * recordsPerPage;
     
-    uint totalCourses = EnumerableSet.length(s_bootcampIds) - 1;
-    if (offset >= totalCourses) {
+    uint[] memory ids = EnumerableSet.values(s_bootcampIds); // re verify
+    uint totalCourses = ids.length;
+
+    if (totalCourses <= offset) {
       return new Bootcamp[](0);
     }
-    uint[] memory ids = EnumerableSet.values(s_bootcampIds);
-    Bootcamp[] memory courses = new Bootcamp[](RECORDS_PER_PAGE);
-    
-    for (uint i = 0; i < RECORDS_PER_PAGE; ++i) {
+    Bootcamp[] memory courses = new Bootcamp[](recordsPerPage);
+
+    for (uint i = 0; i < recordsPerPage; ++i) {
+      if (offset + i >= totalCourses) {
+        break;
+      }
       Bootcamp memory bc = s_bootcamps[uint128(ids[offset + i])];
       courses[i].title = bc.title;
       courses[i].id = bc.id;
       courses[i].deadline = bc.deadline;
       courses[i].timeToComplete = bc.timeToComplete;
+      courses[i].deposit = bc.deposit;
+      courses[i].feePercentage = bc.feePercentage;
     }
 
     return courses;

@@ -3,38 +3,32 @@ pragma solidity 0.8.20;
 
 import { Test } from 'forge-std/Test.sol';
 import { console } from 'forge-std/Console.sol';
+
 import { ERC721 } from '@openzeppelin-contracts/token/ERC721/ERC721.sol';
-import { IERC721 } from '@openzeppelin-contracts/token/ERC721/IERC721.sol';
 
 import { Bootcamper } from '../src/Bootcamper.sol';
-
-contract TaskCompletionCertificate is ERC721 {
-
-  uint private nonce = 1;
-  constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
-
-  function mint(address _to) public {
-    _mint(_to, nonce);
-    ++nonce;
-  }
-
-}
+import { DeployBootcamper } from 'script/DeployBootcamper.sol';
+import { TaskCompletionCertificate, DeployCompletionCert } from 'script/DeployCompletionCert.sol';
 
 contract BootcamperTest is Test {
 
   address private ALICE = makeAddr("ALICE");
   address private BOB = makeAddr("BOB");
   address private CHARLIE = makeAddr("CHARLIE");
-  address private DEPLOYER = makeAddr("DEPLOYER");
+  address private DEPLOYER;
 
   TaskCompletionCertificate private taskCertificate;
   Bootcamper bootcamper;
 
   function setUp() external {
-    vm.startPrank(DEPLOYER);
-    bootcamper = new Bootcamper("Bootcamper", "BCMP");
-    taskCertificate = new TaskCompletionCertificate("Chapter1", "Chapter1");
-    vm.stopPrank();
+    console.log("This Contract Address: ", address(this));
+
+    DeployBootcamper deployBootcamper = new DeployBootcamper();
+    DeployCompletionCert deployCompletionCert = new DeployCompletionCert();
+    bootcamper = deployBootcamper.run();
+    taskCertificate = deployCompletionCert.run();
+    DEPLOYER = bootcamper.getOwner();
+    console.log("Deployer Address: ", DEPLOYER);
   }
 
   modifier addCourse(uint numberOfCourses) {
@@ -119,12 +113,24 @@ contract BootcamperTest is Test {
     vm.prank(ALICE);
     bootcamper.withdraw(COURSE_ID);
   
+    uint previousBalance = DEPLOYER.balance;
+
     vm.prank(DEPLOYER);
     bootcamper.collectFees();
 
     uint feeCollected = (1 ether * 5) / 100;
 
-    assertEq(DEPLOYER.balance, feeCollected);
+    assertEq(DEPLOYER.balance, previousBalance + feeCollected);
   }
+
+  function testTotalCourses() external addCourse(3) {
+    assertEq(bootcamper.getTotalCourses(), 3);
+  }
+
+  function testGetAllCourses() external addCourse(3) {
+    Bootcamper.Bootcamp[] memory bootcamps = bootcamper.getAllCourses(1, 5);
+    assertEq(bootcamps.length, 5);
+  }
+
 
 }
