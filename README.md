@@ -2,7 +2,7 @@ Title: Bootcamper
 
 Summary: Token gated course curriculum and content
 
-Description: An application that enables an institution to token-gate its content behind a deposit wall. Deposit is refundable only upon completion of course. Completion of course is determined by having all the completion certificates (NFTs) of each chapter, exercise and homework.
+Description: An application that enables to token-gate its courses behind a deposit pay-wall. Deposit is refundable only upon completion of course. Completion of course is determined by having all the completion certificates (NFTs) of each chapter, exercise and homework.
 
 
 ## Actors:
